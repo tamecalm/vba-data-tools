@@ -29,14 +29,14 @@ Sub CategorizeRidersAdhocAndHubOfficers()
 
     ' Adhoc list (example: replace with actual names)
     adhocList = Array("Abubakar Ishaq", "DEBORAH FAITH OMOSEYE", "Ibrahim Isyaku", "Otukhagua Benjamin", "Ojeikhoa Emmanuel Abiodun", _
-                      "Shitu Aliyu", "Sani Abdurahman", "Ubangida Abdurrahman", "PETER STEPHEN", "Sani Aminu", _
-                      "Yahaya Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen")
+                      "Shitu Aliyu", "Sani Abdurahman", "Ubangida Abdurrahman", "PETER STEPHEN", "Sani Aminu", "Mahmud   Ibrahim", _
+                      "Yahaya Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen", "Usman Yahaya", "Lukman Ishaq")
 
     ' Hub Officer list (takes priority if name appears in multiple lists)
     hubOfficerList = Array("UDUMA EMMANUEL", "DANLANDI EUGENE", "AMINU AUDU", "PETER DANKARO", "INNOCENT  SIMON", _
                            "BUKAR LAWAL", "TOYOSI ADEYEMI", "SOMI KADIRI", "HARUNA YELWA", "HARUNA ABDULLAHI", _
                            "GABRIEL GEORGE", "GIDEON DANIEL", "RAKIYA MUSA", "SULE UMARU", "HASHIMA ADAM", _
-                           "DANLADI EUGENE", _
+                           "DANLADI EUGENE", "Abdullahi Haruna", _
                            "AUSTIN MODI", "ABDULSALAR SULEIMAN", "SULEIMAN AMBALI", "ABDULSALAM SULEIMAN")
 
     ' Rider list (should exclude names already in hubOfficerList)
@@ -112,3 +112,5 @@ Function IsInList(name As String, nameList As Variant) As Boolean
     Next i
     IsInList = False
 End Function
+
+
