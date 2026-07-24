@@ -30,7 +30,10 @@ Sub CategorizeRidersAdhocAndHubOfficers()
     ' Adhoc list (example: replace with actual names)
     adhocList = Array("Abubakar Ishaq", "DEBORAH FAITH OMOSEYE", "Ibrahim Isyaku", "Otukhagua Benjamin", "Ojeikhoa Emmanuel Abiodun", _
                       "Shitu Aliyu", "Sani Abdurahman", "Ubangida Abdurrahman", "PETER STEPHEN", "Sani Aminu", "Mahmud   Ibrahim", _
-                      "Yahaya Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen", "Usman Yahaya", "Lukman Ishaq")
+                      "Yahaya Ibrahim", "Yakubu Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen", "Usman Yahaya", "Lukman Ishaq")
+
+
+    ipdsList = Array("ABDUSSAMAD MUHAMMAD ALMAJIR", "Abel John")         
 
     ' Hub Officer list (takes priority if name appears in multiple lists)
     hubOfficerList = Array("UDUMA EMMANUEL", "DANLANDI EUGENE", "AMINU AUDU", "PETER DANKARO", "INNOCENT  SIMON", _
