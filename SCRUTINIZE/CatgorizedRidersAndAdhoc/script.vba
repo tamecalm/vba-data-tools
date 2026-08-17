@@ -33,7 +33,10 @@ Sub CategorizeRidersAdhocAndHubOfficers()
                       "Yahaya Ibrahim", "Yakubu Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen", "Usman Yahaya", "Lukman Ishaq")
 
 
-    ipdsList = Array("ABDUSSAMAD MUHAMMAD ALMAJIR", "Abel John")         
+    ipdsList = Array("ABDUSSAMAD MUHAMMAD ALMAJIR", "Abel John", "ABDUSSAMAD MUHAMMAD ALMAJIR" _
+                     "Abel John")         
+
+    psbList = Array("Wada Musa")                 
 
     ' Hub Officer list (takes priority if name appears in multiple lists)
     hubOfficerList = Array("UDUMA EMMANUEL", "DANLANDI EUGENE", "AMINU AUDU", "PETER DANKARO", "INNOCENT  SIMON", _
