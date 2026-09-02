@@ -32,10 +32,10 @@ Sub CategorizeRidersAdhocAndHubOfficers()
                       "Shitu Aliyu", "Sani Abdurahman", "Ubangida Abdurrahman", "PETER STEPHEN", "Sani Aminu", "Mahmud   Ibrahim", _
                       "Yahaya Ibrahim", "Yakubu Ibrahim", "Andrew Vawe", "Shuaibu Saidu", "Yusuf Nasirdeen", "Usman Yahaya", "Lukman Ishaq")
 
+    ' Ipds list
+    ipdsList = Array("ABDUSSAMAD MUHAMMAD ALMAJIR", "Abel John")         
 
-    ipdsList = Array("ABDUSSAMAD MUHAMMAD ALMAJIR", "Abel John", "ABDUSSAMAD MUHAMMAD ALMAJIR" _
-                     "Abel John")         
-
+    ' Psb list
     psbList = Array("Wada Musa")                 
 
     ' Hub Officer list (takes priority if name appears in multiple lists)
@@ -73,6 +73,10 @@ Sub CategorizeRidersAdhocAndHubOfficers()
                 category = "RIDER"
             ElseIf IsInList(state, adhocList) Then
                 category = "ADHOC"
+            ElseIf IsInList(state, ipdsList) Then
+                category = "IPDS"
+            ElseIf IsInList(state, psbList) Then
+                category = "PSB"
             Else
                 category = "Not In List"
             End If
