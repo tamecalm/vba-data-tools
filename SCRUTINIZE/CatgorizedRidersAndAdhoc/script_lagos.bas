@@ -38,10 +38,10 @@ Sub CategorizeRidersAdhocAndHubOfficers()
                       "BASIL ULUGBE")
 
     ' In House Cleaner list
-    cleanerList = Array("Zainab Uthman")
+    cleanerList = Array("Zainab Uthman", "Cares Akohamen")
 
     ' Riders list
-    ridersList = Array("BAMIDELE OJO", "Cares Akohamen", "David Edegbo", _
+    ridersList = Array("BAMIDELE OJO", "David Edegbo", _
                        "ESSU CHUKS", "HENRY TOBY", "JOHNSON ALARAPE", _
                        "MONSURU AJINIKIRUN", "MUHAMMED HASSAN", "Njiaka Onyemaechi", _
                        "ODEH BENEDICT", "OJOR PAUL", "Raphael Adebowale", _
