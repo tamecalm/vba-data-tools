@@ -144,6 +144,12 @@ Scripts for data analysis, categorization, and validation:
 - **Output**: New worksheet "IncompleteAddresses" with Pivot Table summary
 - **Files**: `script.bas`, `setup.md`
 
+#### ShallowAddresses
+- **Purpose**: Flags shallow Nigerian addresses lacking location depth (strictly 3 words or fewer: Single-word, Two-word, Bare Street like "18 SARI STREET", and short 3-word entries)
+- **Target Columns**: User-prompted (default Column C for addresses, Column L for officers)
+- **Output**: "ShallowAddresses" (full audit + Pivot Table) and "FinalRecord" (50% Round Up summary table & 50% raw address rows linked)
+- **Files**: `script.bas`, `setup.md`
+
 #### CatgorizedRidersAndAdhoc
 - **Purpose**: Categorizes personnel into HUB OFFICER, RIDER, ADHOC, or "Not In List"
 - **Target Column**: A (names)
@@ -177,6 +183,9 @@ VBA SCRIPTS/
 │       └── setup.md
 └── SCRUTINIZE/                       # Data analysis scripts
     ├── IncompleteAddresses/
+    │   ├── script.bas
+    │   └── setup.md
+    ├── ShallowAddresses/
     │   ├── script.bas
     │   └── setup.md
     ├── SumNumbersInCell/
