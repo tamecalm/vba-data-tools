@@ -138,6 +138,12 @@ Scripts for data analysis, categorization, and validation:
 - **Output**: New worksheet "TextOnlyAddresses"
 - **Files**: `scipt.vba`, `setup.md`
 
+#### IncompleteAddresses
+- **Purpose**: Identifies incomplete addresses (text-only or numbers-only) and generates a report with a Pivot Table summary
+- **Target Columns**: User-prompted (default Column C for addresses, Column L for officers)
+- **Output**: New worksheet "IncompleteAddresses" with Pivot Table summary
+- **Files**: `script.bas`, `setup.md`
+
 #### CatgorizedRidersAndAdhoc
 - **Purpose**: Categorizes personnel into HUB OFFICER, RIDER, ADHOC, or "Not In List"
 - **Target Column**: A (names)
@@ -170,6 +176,9 @@ VBA SCRIPTS/
 │       ├── script.vba
 │       └── setup.md
 └── SCRUTINIZE/                       # Data analysis scripts
+    ├── IncompleteAddresses/
+    │   ├── script.bas
+    │   └── setup.md
     ├── SumNumbersInCell/
     │   ├── script.vba
     │   └── setup.md
