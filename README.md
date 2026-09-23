@@ -147,7 +147,7 @@ Scripts for data analysis, categorization, and validation:
 #### ShallowAddresses
 - **Purpose**: Flags shallow Nigerian addresses lacking location depth (strictly 3 words or fewer: Single-word, Two-word, Bare Street like "18 SARI STREET", and short 3-word entries)
 - **Target Columns**: User-prompted (default Column C for addresses, Column L for officers)
-- **Output**: "ShallowAddresses" (full audit + Pivot Table) and "FinalRecord" (50% Round Up summary table & 50% raw address rows linked)
+- **Output**: "ShallowAddresses" (full audit + Pivot Table) and "FinalRecord" (50% Round Up summary table, 50% raw address rows, and 50% Pivot Table)
 - **Files**: `script.bas`, `setup.md`
 
 #### CatgorizedRidersAndAdhoc

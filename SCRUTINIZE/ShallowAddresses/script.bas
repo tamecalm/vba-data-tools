@@ -1,8 +1,8 @@
 ' === Macro: ShallowAddressesReport ===
 ' Description: Detects shallow/incomplete addresses strictly up to 3 words,
 '              builds a full audit sheet ("ShallowAddresses"), and generates
-'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas
-'              and the corresponding 50% raw address rows linked back to the source.
+'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas,
+'              50% raw address rows, and a dedicated Pivot Table.
 ' Author: Ilesanmi Kehinde John (Calm)
 ' Date Created: July 2025
 
@@ -10,12 +10,14 @@ Sub ShallowAddressesReport()
     Dim ws As Worksheet, wsNew As Worksheet, wsRecord As Worksheet
     Dim lastRow As Long, newRow As Long, rowIdx As Long, recRow As Long, detailRow As Long
     Dim ptStart As Range, dataRange As Range
+    Dim ptRecordStart As Range, recordDataRange As Range
     Dim officer As Variant
     Dim rawAddr As String, cleanAddr As String, category As String
     Dim addressCol As String, officerCol As String
     Dim wc As Long, totalCount As Long, takeCount As Long, i As Long, srcRow As Long
     Dim regexSuffix As Object
     Dim ptCache As PivotCache, pt As PivotTable
+    Dim ptRecordCache As PivotCache, ptRecord As PivotTable
     Dim dictOfficers As Object, offKey As Variant, rowsList() As String
     
     addressCol = InputBox("Enter the column letter that contains addresses:", "Address Column", "C")
@@ -116,7 +118,7 @@ Sub ShallowAddressesReport()
             .AddDataField .PivotFields("Address"), "Count of Incomplete", xlCount
         End With
         
-        ' Create FinalRecord sheet linking to ShallowAddresses
+        ' Create FinalRecord sheet
         Set wsRecord = ThisWorkbook.Sheets.Add(After:=wsNew)
         wsRecord.Name = "FinalRecord"
         
@@ -182,12 +184,35 @@ Sub ShallowAddressesReport()
         wsRecord.Cells(recRow, 4).Formula = "=SUM(D2:D" & (recRow - 1) & ")"
         wsRecord.Range("A" & recRow & ":D" & recRow).Font.Bold = True
         
-        wsRecord.Columns("A:K").AutoFit
+        ' Create Pivot Table for FinalRecord
+        If detailRow > 2 Then
+            Set recordDataRange = wsRecord.Range("F1:J" & (detailRow - 1))
+            Set ptRecordStart = wsRecord.Range("M3")
+            
+            Set ptRecordCache = ThisWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=recordDataRange)
+            
+            On Error Resume Next
+            Set ptRecord = wsRecord.PivotTables("FinalRecordPivot")
+            On Error GoTo 0
+            
+            If ptRecord Is Nothing Then
+                Set ptRecord = ptRecordCache.CreatePivotTable(TableDestination:=ptRecordStart, TableName:="FinalRecordPivot")
+            End If
+            
+            With ptRecord
+                .ClearAllFilters
+                .PivotFields("Verification Officer").Orientation = xlRowField
+                .PivotFields("Incomplete Category").Orientation = xlColumnField
+                .AddDataField .PivotFields("Address (50% Selection)"), "Count of 50% Recorded", xlCount
+            End With
+        End If
+        
+        wsRecord.Columns("A:Q").AutoFit
         
         wsRecord.Activate
         MsgBox (newRow - 2) & " shallow addresses flagged." & vbCrLf & _
                "Pivot Table generated in 'ShallowAddresses'." & vbCrLf & _
-               "50% Final Record Table & raw rows generated in 'FinalRecord'.", vbInformation
+               "50% Final Record Table, raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
     Else
         MsgBox "No shallow or incomplete addresses (3 words or fewer) found in column " & addressCol & ".", vbInformation
     End If

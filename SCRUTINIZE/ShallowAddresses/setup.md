@@ -6,11 +6,12 @@ In Nigerian address verification, an address like `"18 SARI STREET"` or `"AIRPOR
 
 This macro identifies addresses that are **at most 3 words long** (`Word Count <= 3`), preventing compound addresses (such as `"NO 2 AKINBOREWA CLOSE ADEEKO OLUSANYA STREET"`) from being falsely flagged.
 
-Furthermore, it generates two sheets:
-1. **`ShallowAddresses`**: Contains the full audit of all flagged addresses with a Pivot Table summary.
+Furthermore, it generates two coordinated sheets:
+1. **`ShallowAddresses`**: Contains the full audit list of all flagged addresses with a Pivot Table summary (`ShallowPivot`).
 2. **`FinalRecord`**: A dedicated sheet created specifically for logging into your **Master Record Table**, containing:
-   - **Summary Table (Columns A:D)**: Lists each officer, the `Total Found`, `50% Value`, and `Final to Record (50% Round Up)` with dynamic Excel formulas linked to `ShallowAddresses`.
+   - **Summary Table (Columns A:D)**: Lists each officer, `Total Found`, `50% Value`, and `Final to Record (50% Round Up)` with dynamic Excel formulas linked to `ShallowAddresses`.
    - **50% Raw Address Records (Columns F:K)**: Automatically extracts exactly 50% (rounded up) of the actual raw address rows for each officer, linked via Excel formulas and clickable jump hyperlinks back to `ShallowAddresses`.
+   - **Final Record Pivot Table (Column M onwards)**: A dedicated Pivot Table (`FinalRecordPivot`) summarizing the 50% selected records by **Verification Officer** and **Incomplete Category**.
 
 ---
 
@@ -33,8 +34,8 @@ Paste the code below:
 ' === Macro: ShallowAddressesReport ===
 ' Description: Detects shallow/incomplete addresses strictly up to 3 words,
 '              builds a full audit sheet ("ShallowAddresses"), and generates
-'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas
-'              and the corresponding 50% raw address rows linked back to the source.
+'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas,
+'              50% raw address rows, and a dedicated Pivot Table.
 ' Author: Ilesanmi Kehinde John (Calm)
 ' Date Created: July 2025
 
@@ -42,12 +43,14 @@ Sub ShallowAddressesReport()
     Dim ws As Worksheet, wsNew As Worksheet, wsRecord As Worksheet
     Dim lastRow As Long, newRow As Long, rowIdx As Long, recRow As Long, detailRow As Long
     Dim ptStart As Range, dataRange As Range
+    Dim ptRecordStart As Range, recordDataRange As Range
     Dim officer As Variant
     Dim rawAddr As String, cleanAddr As String, category As String
     Dim addressCol As String, officerCol As String
     Dim wc As Long, totalCount As Long, takeCount As Long, i As Long, srcRow As Long
     Dim regexSuffix As Object
     Dim ptCache As PivotCache, pt As PivotTable
+    Dim ptRecordCache As PivotCache, ptRecord As PivotTable
     Dim dictOfficers As Object, offKey As Variant, rowsList() As String
     
     addressCol = InputBox("Enter the column letter that contains addresses:", "Address Column", "C")
@@ -148,7 +151,7 @@ Sub ShallowAddressesReport()
             .AddDataField .PivotFields("Address"), "Count of Incomplete", xlCount
         End With
         
-        ' Create FinalRecord sheet linking to ShallowAddresses
+        ' Create FinalRecord sheet
         Set wsRecord = ThisWorkbook.Sheets.Add(After:=wsNew)
         wsRecord.Name = "FinalRecord"
         
@@ -214,12 +217,35 @@ Sub ShallowAddressesReport()
         wsRecord.Cells(recRow, 4).Formula = "=SUM(D2:D" & (recRow - 1) & ")"
         wsRecord.Range("A" & recRow & ":D" & recRow).Font.Bold = True
         
-        wsRecord.Columns("A:K").AutoFit
+        ' Create Pivot Table for FinalRecord
+        If detailRow > 2 Then
+            Set recordDataRange = wsRecord.Range("F1:J" & (detailRow - 1))
+            Set ptRecordStart = wsRecord.Range("M3")
+            
+            Set ptRecordCache = ThisWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=recordDataRange)
+            
+            On Error Resume Next
+            Set ptRecord = wsRecord.PivotTables("FinalRecordPivot")
+            On Error GoTo 0
+            
+            If ptRecord Is Nothing Then
+                Set ptRecord = ptRecordCache.CreatePivotTable(TableDestination:=ptRecordStart, TableName:="FinalRecordPivot")
+            End If
+            
+            With ptRecord
+                .ClearAllFilters
+                .PivotFields("Verification Officer").Orientation = xlRowField
+                .PivotFields("Incomplete Category").Orientation = xlColumnField
+                .AddDataField .PivotFields("Address (50% Selection)"), "Count of 50% Recorded", xlCount
+            End With
+        End If
+        
+        wsRecord.Columns("A:Q").AutoFit
         
         wsRecord.Activate
         MsgBox (newRow - 2) & " shallow addresses flagged." & vbCrLf & _
                "Pivot Table generated in 'ShallowAddresses'." & vbCrLf & _
-               "50% Final Record Table & raw rows generated in 'FinalRecord'.", vbInformation
+               "50% Final Record Table, raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
     Else
         MsgBox "No shallow or incomplete addresses (3 words or fewer) found in column " & addressCol & ".", vbInformation
     End If
@@ -258,33 +284,20 @@ End Function
    - Enter the column letter containing addresses (default: `C`).
    - Enter the column letter containing officer names (default: `L`).
 4. Two sheets will be generated:
-   - **`ShallowAddresses`**: Complete list of flagged addresses and Pivot Table summary.
-   - **`FinalRecord`**: The 50% summary table and the 50% raw address rows.
+   - **`ShallowAddresses`**: Complete list of flagged addresses and Pivot Table summary (`ShallowPivot`).
+   - **`FinalRecord`**: The 50% summary table, the 50% raw address rows, and the 50% Pivot Table (`FinalRecordPivot`).
 
 ---
 
-## 🧪 Output Structure in `FinalRecord`
+## 🧪 Structure of `FinalRecord` Sheet
 
-### 1. Summary Record Table (Columns A:D)
-Ready to copy directly into your Master Record Table:
-
-| Verification Officer | Total Found | 50% Value | Final to Record (50% Round Up) |
-| :--- | :---: | :---: | :---: |
-| Officer A | 5 | 2.5 | **3** |
-| Officer B | 2 | 1.0 | **1** |
-| Officer C | 1 | 0.5 | **1** |
-| **Grand Total** | **8** | **4.0** | **5** |
-
-### 2. 50% Raw Address Rows Table (Columns F:K)
-Contains the exact 50% (rounded up) sampled address rows per officer, with dynamic formulas and clickable jump links:
-
-| Address (50% Selection) | Verification Officer | Incomplete Category | Word Count | Source Sheet Row | Link to Shallow Sheet |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| `18 SARI STREET` | Officer A | Bare Street (3 words) | 3 | 2 | [Go to Row 2] |
-| `24B BROAD STREET` | Officer A | Bare Street (3 words) | 3 | 3 | [Go to Row 3] |
-| `PLOT 12 AIRPORT ROAD` | Officer A | Bare Street (3 words) | 3 | 4 | [Go to Row 4] |
-| `18` | Officer B | Single-word | 1 | 6 | [Go to Row 6] |
-| `No 18` | Officer C | Two-word | 2 | 8 | [Go to Row 8] |
+```text
+[Cols A:D] Summary Table          [Cols F:K] 50% Raw Records            [Cols M:P] FinalRecordPivot
+Officer | Total | 50% | RoundUp   Address | Officer | Cat | Link        Officer | Bare Street | Two-word | Total
+Off A   | 4     | 2.0 | 2         18 SARI | Off A   | Bare| [Go]        Off A   | 2           |          | 2
+Off B   | 2     | 1.0 | 1         24B RD  | Off A   | Bare| [Go]        Off B   |             | 1        | 1
+Grand   | 6     | 3.0 | 3         AIRPORT | Off B   | Two | [Go]        Total   | 2           | 1        | 3
+```
 
 ---
 
