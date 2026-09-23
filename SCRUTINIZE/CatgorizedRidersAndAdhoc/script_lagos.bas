@@ -99,8 +99,11 @@ End Sub
 ' Returns : True if match found; otherwise False
 ' =====================================================
 Function IsState(state As String, statesList As Variant) As Boolean
-    Dim i As Integer
-    If (Not statesList) = -1 Then Exit Function
+    Dim i As Long
+    
+    If Not IsArray(statesList) Then Exit Function
+    If UBound(statesList) < LBound(statesList) Then Exit Function
+    
     For i = LBound(statesList) To UBound(statesList)
         If InStr(1, state, statesList(i), vbTextCompare) > 0 Then
             IsState = True
@@ -116,8 +119,11 @@ End Function
 ' Returns : True if match found; otherwise False
 ' =====================================================
 Function IsInList(name As String, nameList As Variant) As Boolean
-    Dim i As Integer
-    If (Not nameList) = -1 Then Exit Function
+    Dim i As Long
+    
+    If Not IsArray(nameList) Then Exit Function
+    If UBound(nameList) < LBound(nameList) Then Exit Function
+    
     For i = LBound(nameList) To UBound(nameList)
         If InStr(1, name, nameList(i), vbTextCompare) > 0 Then
             IsInList = True
