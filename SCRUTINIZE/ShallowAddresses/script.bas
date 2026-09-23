@@ -1,8 +1,8 @@
 ' === Macro: ShallowAddressesReport ===
 ' Description: Detects shallow/incomplete addresses strictly up to 3 words,
 '              builds a full audit sheet ("ShallowAddresses"), and generates
-'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas,
-'              50% raw address rows, and a dedicated Pivot Table.
+'              a dedicated "FinalRecord" sheet with 50% and 25%-from-50% rounded-up formulas,
+'              linked raw address rows, and a dedicated Pivot Table.
 ' Author: Ilesanmi Kehinde John (Calm)
 ' Date Created: July 2025
 
@@ -14,7 +14,7 @@ Sub ShallowAddressesReport()
     Dim officer As Variant
     Dim rawAddr As String, cleanAddr As String, category As String
     Dim addressCol As String, officerCol As String
-    Dim wc As Long, totalCount As Long, takeCount As Long, i As Long, srcRow As Long
+    Dim wc As Long, totalCount As Long, takeCount50 As Long, takeCount25 As Long, i As Long, srcRow As Long
     Dim regexSuffix As Object
     Dim ptCache As PivotCache, pt As PivotTable
     Dim ptRecordCache As PivotCache, ptRecord As PivotTable
@@ -125,8 +125,8 @@ Sub ShallowAddressesReport()
         With wsRecord
             .Range("A1").Value = "Verification Officer"
             .Range("B1").Value = "Total Found"
-            .Range("C1").Value = "50% Value"
-            .Range("D1").Value = "Final to Record (50% Round Up)"
+            .Range("C1").Value = "50% Deduction (Round Up)"
+            .Range("D1").Value = "25% Deduction from 50% (Round Up)"
             .Range("A1:D1").Font.Bold = True
             
             .Range("F1").Value = "Address (50% Selection)"
@@ -134,8 +134,9 @@ Sub ShallowAddressesReport()
             .Range("H1").Value = "Incomplete Category"
             .Range("I1").Value = "Word Count"
             .Range("J1").Value = "Source Sheet Row"
-            .Range("K1").Value = "Link to Shallow Sheet"
-            .Range("F1:K1").Font.Bold = True
+            .Range("K1").Value = "Within 25% Net?"
+            .Range("L1").Value = "Link to Shallow Sheet"
+            .Range("F1:L1").Font.Bold = True
         End With
         
         Set dictOfficers = CreateObject("Scripting.Dictionary")
@@ -157,21 +158,27 @@ Sub ShallowAddressesReport()
         For Each offKey In dictOfficers.Keys
             wsRecord.Cells(recRow, 1).Value = offKey
             wsRecord.Cells(recRow, 2).Formula = "=COUNTIF('ShallowAddresses'!B:B, A" & recRow & ")"
-            wsRecord.Cells(recRow, 3).Formula = "=B" & recRow & "*0.5"
-            wsRecord.Cells(recRow, 4).Formula = "=ROUNDUP(B" & recRow & "*0.5, 0)"
+            wsRecord.Cells(recRow, 3).Formula = "=ROUNDUP(B" & recRow & "*0.5, 0)"
+            wsRecord.Cells(recRow, 4).Formula = "=ROUNDUP(C" & recRow & "*0.75, 0)"
             
             rowsList = Split(dictOfficers(offKey), ",")
             totalCount = UBound(rowsList) - LBound(rowsList) + 1
-            takeCount = Application.WorksheetFunction.RoundUp(totalCount * 0.5, 0)
+            takeCount50 = Application.WorksheetFunction.RoundUp(totalCount * 0.5, 0)
+            takeCount25 = Application.WorksheetFunction.RoundUp(takeCount50 * 0.75, 0)
             
-            For i = 0 To takeCount - 1
+            For i = 0 To takeCount50 - 1
                 srcRow = CLng(rowsList(i))
                 wsRecord.Cells(detailRow, 6).Formula = "='ShallowAddresses'!A" & srcRow
                 wsRecord.Cells(detailRow, 7).Formula = "='ShallowAddresses'!B" & srcRow
                 wsRecord.Cells(detailRow, 8).Formula = "='ShallowAddresses'!C" & srcRow
                 wsRecord.Cells(detailRow, 9).Formula = "='ShallowAddresses'!D" & srcRow
                 wsRecord.Cells(detailRow, 10).Formula = "='ShallowAddresses'!E" & srcRow
-                wsRecord.Cells(detailRow, 11).Formula = "=HYPERLINK(""#'ShallowAddresses'!A" & srcRow & """, ""Go to Row " & srcRow & """)"
+                If i < takeCount25 Then
+                    wsRecord.Cells(detailRow, 11).Value = "Yes"
+                Else
+                    wsRecord.Cells(detailRow, 11).Value = "No (25% Relieved)"
+                End If
+                wsRecord.Cells(detailRow, 12).Formula = "=HYPERLINK(""#'ShallowAddresses'!A" & srcRow & """, ""Go to Row " & srcRow & """)"
                 detailRow = detailRow + 1
             Next i
             
@@ -187,7 +194,7 @@ Sub ShallowAddressesReport()
         ' Create Pivot Table for FinalRecord
         If detailRow > 2 Then
             Set recordDataRange = wsRecord.Range("F1:J" & (detailRow - 1))
-            Set ptRecordStart = wsRecord.Range("M3")
+            Set ptRecordStart = wsRecord.Range("N3")
             
             Set ptRecordCache = ThisWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=recordDataRange)
             
@@ -207,12 +214,12 @@ Sub ShallowAddressesReport()
             End With
         End If
         
-        wsRecord.Columns("A:Q").AutoFit
+        wsRecord.Columns("A:R").AutoFit
         
         wsRecord.Activate
         MsgBox (newRow - 2) & " shallow addresses flagged." & vbCrLf & _
                "Pivot Table generated in 'ShallowAddresses'." & vbCrLf & _
-               "50% Final Record Table, raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
+               "Final Record Table (50% & 25% from 50%), raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
     Else
         MsgBox "No shallow or incomplete addresses (3 words or fewer) found in column " & addressCol & ".", vbInformation
     End If

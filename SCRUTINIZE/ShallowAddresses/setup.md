@@ -9,9 +9,9 @@ This macro identifies addresses that are **at most 3 words long** (`Word Count <
 Furthermore, it generates two coordinated sheets:
 1. **`ShallowAddresses`**: Contains the full audit list of all flagged addresses with a Pivot Table summary (`ShallowPivot`).
 2. **`FinalRecord`**: A dedicated sheet created specifically for logging into your **Master Record Table**, containing:
-   - **Summary Table (Columns A:D)**: Lists each officer, `Total Found`, `50% Value`, and `Final to Record (50% Round Up)` with dynamic Excel formulas linked to `ShallowAddresses`.
-   - **50% Raw Address Records (Columns F:K)**: Automatically extracts exactly 50% (rounded up) of the actual raw address rows for each officer, linked via Excel formulas and clickable jump hyperlinks back to `ShallowAddresses`.
-   - **Final Record Pivot Table (Column M onwards)**: A dedicated Pivot Table (`FinalRecordPivot`) summarizing the 50% selected records by **Verification Officer** and **Incomplete Category**.
+   - **Summary Table (Columns A:D)**: Lists each officer, `Total Found`, `50% Deduction (Round Up)`, and `25% Deduction from 50% (Round Up)` using dynamic Excel formulas.
+   - **50% Raw Address Records (Columns F:L)**: Automatically extracts the 50% raw address rows for each officer, indicating which ones fall within the net 25% deduction (`Yes` / `No (25% Relieved)`), linked via Excel formulas and clickable jump hyperlinks back to `ShallowAddresses`.
+   - **Final Record Pivot Table (Columns N:R)**: A dedicated Pivot Table (`FinalRecordPivot`) summarizing the 50% selected records by **Verification Officer** and **Incomplete Category**.
 
 ---
 
@@ -34,8 +34,8 @@ Paste the code below:
 ' === Macro: ShallowAddressesReport ===
 ' Description: Detects shallow/incomplete addresses strictly up to 3 words,
 '              builds a full audit sheet ("ShallowAddresses"), and generates
-'              a dedicated "FinalRecord" sheet with 50% rounded-up formulas,
-'              50% raw address rows, and a dedicated Pivot Table.
+'              a dedicated "FinalRecord" sheet with 50% and 25%-from-50% rounded-up formulas,
+'              linked raw address rows, and a dedicated Pivot Table.
 ' Author: Ilesanmi Kehinde John (Calm)
 ' Date Created: July 2025
 
@@ -47,7 +47,7 @@ Sub ShallowAddressesReport()
     Dim officer As Variant
     Dim rawAddr As String, cleanAddr As String, category As String
     Dim addressCol As String, officerCol As String
-    Dim wc As Long, totalCount As Long, takeCount As Long, i As Long, srcRow As Long
+    Dim wc As Long, totalCount As Long, takeCount50 As Long, takeCount25 As Long, i As Long, srcRow As Long
     Dim regexSuffix As Object
     Dim ptCache As PivotCache, pt As PivotTable
     Dim ptRecordCache As PivotCache, ptRecord As PivotTable
@@ -158,8 +158,8 @@ Sub ShallowAddressesReport()
         With wsRecord
             .Range("A1").Value = "Verification Officer"
             .Range("B1").Value = "Total Found"
-            .Range("C1").Value = "50% Value"
-            .Range("D1").Value = "Final to Record (50% Round Up)"
+            .Range("C1").Value = "50% Deduction (Round Up)"
+            .Range("D1").Value = "25% Deduction from 50% (Round Up)"
             .Range("A1:D1").Font.Bold = True
             
             .Range("F1").Value = "Address (50% Selection)"
@@ -167,8 +167,9 @@ Sub ShallowAddressesReport()
             .Range("H1").Value = "Incomplete Category"
             .Range("I1").Value = "Word Count"
             .Range("J1").Value = "Source Sheet Row"
-            .Range("K1").Value = "Link to Shallow Sheet"
-            .Range("F1:K1").Font.Bold = True
+            .Range("K1").Value = "Within 25% Net?"
+            .Range("L1").Value = "Link to Shallow Sheet"
+            .Range("F1:L1").Font.Bold = True
         End With
         
         Set dictOfficers = CreateObject("Scripting.Dictionary")
@@ -190,21 +191,27 @@ Sub ShallowAddressesReport()
         For Each offKey In dictOfficers.Keys
             wsRecord.Cells(recRow, 1).Value = offKey
             wsRecord.Cells(recRow, 2).Formula = "=COUNTIF('ShallowAddresses'!B:B, A" & recRow & ")"
-            wsRecord.Cells(recRow, 3).Formula = "=B" & recRow & "*0.5"
-            wsRecord.Cells(recRow, 4).Formula = "=ROUNDUP(B" & recRow & "*0.5, 0)"
+            wsRecord.Cells(recRow, 3).Formula = "=ROUNDUP(B" & recRow & "*0.5, 0)"
+            wsRecord.Cells(recRow, 4).Formula = "=ROUNDUP(C" & recRow & "*0.75, 0)"
             
             rowsList = Split(dictOfficers(offKey), ",")
             totalCount = UBound(rowsList) - LBound(rowsList) + 1
-            takeCount = Application.WorksheetFunction.RoundUp(totalCount * 0.5, 0)
+            takeCount50 = Application.WorksheetFunction.RoundUp(totalCount * 0.5, 0)
+            takeCount25 = Application.WorksheetFunction.RoundUp(takeCount50 * 0.75, 0)
             
-            For i = 0 To takeCount - 1
+            For i = 0 To takeCount50 - 1
                 srcRow = CLng(rowsList(i))
                 wsRecord.Cells(detailRow, 6).Formula = "='ShallowAddresses'!A" & srcRow
                 wsRecord.Cells(detailRow, 7).Formula = "='ShallowAddresses'!B" & srcRow
                 wsRecord.Cells(detailRow, 8).Formula = "='ShallowAddresses'!C" & srcRow
                 wsRecord.Cells(detailRow, 9).Formula = "='ShallowAddresses'!D" & srcRow
                 wsRecord.Cells(detailRow, 10).Formula = "='ShallowAddresses'!E" & srcRow
-                wsRecord.Cells(detailRow, 11).Formula = "=HYPERLINK(""#'ShallowAddresses'!A" & srcRow & """, ""Go to Row " & srcRow & """)"
+                If i < takeCount25 Then
+                    wsRecord.Cells(detailRow, 11).Value = "Yes"
+                Else
+                    wsRecord.Cells(detailRow, 11).Value = "No (25% Relieved)"
+                End If
+                wsRecord.Cells(detailRow, 12).Formula = "=HYPERLINK(""#'ShallowAddresses'!A" & srcRow & """, ""Go to Row " & srcRow & """)"
                 detailRow = detailRow + 1
             Next i
             
@@ -220,7 +227,7 @@ Sub ShallowAddressesReport()
         ' Create Pivot Table for FinalRecord
         If detailRow > 2 Then
             Set recordDataRange = wsRecord.Range("F1:J" & (detailRow - 1))
-            Set ptRecordStart = wsRecord.Range("M3")
+            Set ptRecordStart = wsRecord.Range("N3")
             
             Set ptRecordCache = ThisWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=recordDataRange)
             
@@ -240,12 +247,12 @@ Sub ShallowAddressesReport()
             End With
         End If
         
-        wsRecord.Columns("A:Q").AutoFit
+        wsRecord.Columns("A:R").AutoFit
         
         wsRecord.Activate
         MsgBox (newRow - 2) & " shallow addresses flagged." & vbCrLf & _
                "Pivot Table generated in 'ShallowAddresses'." & vbCrLf & _
-               "50% Final Record Table, raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
+               "Final Record Table (50% & 25% from 50%), raw rows & Pivot Table generated in 'FinalRecord'.", vbInformation
     Else
         MsgBox "No shallow or incomplete addresses (3 words or fewer) found in column " & addressCol & ".", vbInformation
     End If
@@ -285,19 +292,19 @@ End Function
    - Enter the column letter containing officer names (default: `L`).
 4. Two sheets will be generated:
    - **`ShallowAddresses`**: Complete list of flagged addresses and Pivot Table summary (`ShallowPivot`).
-   - **`FinalRecord`**: The 50% summary table, the 50% raw address rows, and the 50% Pivot Table (`FinalRecordPivot`).
+   - **`FinalRecord`**: The summary table (with both 50% and 25%-from-50% deductions), 50% raw address rows, and the Pivot Table (`FinalRecordPivot`).
 
 ---
 
 ## 🧪 Structure of `FinalRecord` Sheet
 
-```text
-[Cols A:D] Summary Table          [Cols F:K] 50% Raw Records            [Cols M:P] FinalRecordPivot
-Officer | Total | 50% | RoundUp   Address | Officer | Cat | Link        Officer | Bare Street | Two-word | Total
-Off A   | 4     | 2.0 | 2         18 SARI | Off A   | Bare| [Go]        Off A   | 2           |          | 2
-Off B   | 2     | 1.0 | 1         24B RD  | Off A   | Bare| [Go]        Off B   |             | 1        | 1
-Grand   | 6     | 3.0 | 3         AIRPORT | Off B   | Two | [Go]        Total   | 2           | 1        | 3
-```
+### Summary Record Table (Columns A:D)
+| Verification Officer | Total Found | 50% Deduction (Round Up) | 25% Deduction from 50% (Round Up) |
+| :--- | :---: | :---: | :---: |
+| Officer A | 10 | **5** | **4** *(5 − 25% of 5 = 3.75 $\rightarrow$ 4)* |
+| Officer B | 7 | **4** | **3** *(4 − 25% of 4 = 3)* |
+| Officer C | 2 | **1** | **1** |
+| **Grand Total** | **19** | **10** | **8** |
 
 ---
 
